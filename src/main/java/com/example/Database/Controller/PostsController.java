@@ -20,40 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 @RestController
-// public class PostsController {
-
-//     @Autowired
-//     PostService postService;
-    
-//     @GetMapping("/all")
-//     public Optional<PostModel> PostModel showAllPost() {
-//         return postService.showAllPost();
-//     }
-
-//     @PostMapping("/new")
-//         public PostModel createNewPost(@RequestBody PostModel post) {
-//         return postService.createNewPost(post);
-//     }
-
-//     @GetMapping("/post/{id}")
-//     public Optional<PostModel> showPost(@RequestParam String param) {
-//         return postService.showPost();
-//     }
-
-//     @DeleteMapping("/{id}")
-//     public boolean deletePost(int id){
-//         return postService.deletePost(id);
-//     }    
-
-//     @PutMapping("update/{id}")
-//     public String updatePost(@PathVariable String id, @RequestBody String entity) {
-        
-//         return entity;
-//     }
-    
-    
-// }
-
 public class PostsController {
 
     @Autowired
