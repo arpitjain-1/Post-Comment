@@ -19,6 +19,13 @@ public class PostModel {
     @Transient
     private int user_id;
 
+//     | Annotation                  | What It Does                                                           |
+//     | --------------------------- | ---------------------------------------------------------------------- |
+//     | `FetchType.LAZY`            | Loads `user` only when `getUser()` is called                           |
+//     | `@JoinColumn(name = "...")` | Defines the foreign key column in the child table                      |
+//     | `@JsonIgnore`               | Excludes this field from JSON output to avoid recursion/sensitive data |
+//                                      like user to post <=> post to user <=> user to post
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @JsonIgnore  // Avoid circular reference during serialization

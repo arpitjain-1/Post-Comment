@@ -25,6 +25,18 @@ public class UserModel {
     @Column(nullable = false, unique = true)
     private String email;
 
+    // @OneToMany -> Indicates a one-to-many relationship (1 User → Many Posts).
+
+    // mappedBy = "user" -> Makes the relationship bidirectional. 
+    // Means the 'user' field in PostModel owns the foreign key (User is the inverse side).
+
+    // cascade = CascadeType.ALL -> All operations (persist, merge, remove, refresh, detach) on User 
+    // will also apply to associated Posts.
+
+    // orphanRemoval = true -> If a Post is removed from the User's posts list 
+    // and is not referenced elsewhere, it will be deleted from the database.
+
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostModel> posts;
 
