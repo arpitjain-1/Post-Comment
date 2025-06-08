@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 
 @Entity
@@ -17,16 +18,16 @@ public class IdCardModel {
 
     private Date issuedDate;
 
-    // @OneToOne
-    // @JoinColumn(name = "user_id")
-    // private UserModel user;
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private UserModel user;
 
-    @Column(name = "user_id")
-    private int userId;
+    // @Column(name = "user_id")
+    // private int userId;
 
     public IdCardModel(){}
 
-    IdCardModel(Date d){
+    public IdCardModel(Date d){
         this.issuedDate = d;
     }
 
@@ -39,14 +40,14 @@ public class IdCardModel {
     }
 
     // passing object vs variable directly
-    public void setUser(int userId) {
+    public void setUser(UserModel userId) {
 
         //parameters:- User user and set this.user = user
-        this.userId = userId;
+        this.user = userId;
     }
 
-    public int getUser() {
+    public UserModel getUser() {
         // return type:- user and return value is user;
-        return userId;
+        return user;
     }
 }
