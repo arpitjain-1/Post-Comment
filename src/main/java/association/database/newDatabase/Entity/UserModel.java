@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,6 +15,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.validation.constraints.*;
 
 @Entity
 public class UserModel {
@@ -21,9 +23,20 @@ public class UserModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int Id;
     
+    @NotEmpty
     private String Name;
-    private String Email;
 
+    @Email
+    @Pattern(regexp="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @NotEmpty
+    @Pattern(
+        regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$",
+        message = "Must have 1 digit, 1 lowercase, 1 uppercase, 1 special character, and be at least 8 characters"
+    )
+    @Column(name = "password", nullable = false)
     private String Password;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
@@ -33,18 +46,18 @@ public class UserModel {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AddressModel> addressModel;
 
-    @ManyToMany
-    @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private List<RoleModel> roles = new ArrayList<>();
+    // @ManyToMany
+    // @JoinTable(
+    //     name = "user_roles",
+    //     joinColumns = @JoinColumn(name = "user_id"),
+    //     inverseJoinColumns = @JoinColumn(name = "role_id")
+    // )
+    // private List<RoleModel> roles = new ArrayList<>();
 
     UserModel(){}
 
     public UserModel(String Email, String Name, String Password){
-        this.Email = Email;
+        this.email = Email;
         this.Name = Name;
         this.Password = Password;
     }
@@ -58,11 +71,11 @@ public class UserModel {
     }
 
     public void setEmail(String email) {
-        this.Email = email;
+        this.email = email;
     }
 
     public String getEmail() {
-        return Email;
+        return email;
     }
 
     public void setPassword(String Password) {
@@ -97,21 +110,21 @@ public class UserModel {
         return iCardModel;
     }
 
-    public void addRole(RoleModel role) {
-        this.roles.add(role);
-        role.getUser().add(this);
-    }
+    // public void addRole(RoleModel role) {
+    //     this.roles.add(role);
+    //     role.getUser().add(this);
+    // }
 
-    public void removeRole(RoleModel role) {
-        this.roles.remove(role);
-        role.getUser().remove(this);
-    }
+    // public void removeRole(RoleModel role) {
+    //     this.roles.remove(role);
+    //     role.getUser().remove(this);
+    // }
 
-    public void setRoleModel(List<RoleModel> roleModel) {
-        this.roles = roleModel;
-    }
+    // public void setRoleModel(List<RoleModel> roleModel) {
+    //     this.roles = roleModel;
+    // }
 
-    public List<RoleModel> getRoleModel() {
-        return roles;
-    }
+    // public List<RoleModel> getRoleModel() {
+    //     return roles;
+    // }
 }

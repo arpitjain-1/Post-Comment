@@ -14,8 +14,8 @@ public class RoleModel {
 
     private String role;
 
-    @ManyToMany(mappedBy = "roles")
-    private List<UserModel> user = new ArrayList<>();
+    // @ManyToMany(mappedBy = "roles")
+    // private List<UserModel> user = new ArrayList<>();
 
     public RoleModel(){};
 
@@ -24,7 +24,7 @@ public class RoleModel {
         this.roleId = roleId;
     }
 
-    public List<UserModel> getUser() {
-        return user;
-    }
+    // public List<UserModel> getUser() {
+    //     return user;
+    // }
 }

@@ -9,5 +9,7 @@ import association.database.newDatabase.Entity.UserModel;
 public interface UserRepository extends JpaRepository <UserModel, Integer>{
 
     association.database.newDatabase.Entity.UserModel save(association.database.newDatabase.Entity.UserModel user);
+
+    boolean existsByEmail(String email);
     
 }
