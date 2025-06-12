@@ -2,6 +2,8 @@ package association.database.newDatabase.Entity;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,10 +24,8 @@ public class IdCardModel {
 
     @OneToOne
     @JoinColumn(name = "user_id")
+    @JsonBackReference
     private UserModel user;
-
-    // @Column(name = "user_id")
-    // private int userId;
 
     public IdCardModel(){}
 
@@ -42,10 +42,10 @@ public class IdCardModel {
     }
 
     // passing object vs variable directly
-    public void setUser(UserModel userId) {
+    public void setUser(UserModel user) {
 
         //parameters:- User user and set this.user = user
-        this.user = userId;
+        this.user = user;
     }
 
     public UserModel getUser() {

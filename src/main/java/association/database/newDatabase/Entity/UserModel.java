@@ -1,8 +1,9 @@
 package association.database.newDatabase.Entity;
 
 
-import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -10,9 +11,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.*;
@@ -27,7 +25,7 @@ public class UserModel {
     private String Name;
 
     @Email
-    @Pattern(regexp="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    @Pattern(regexp="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", message = "Email isn't formated properly")
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -40,19 +38,12 @@ public class UserModel {
     private String Password;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "id_card_id")
+    @JsonManagedReference
     private IdCardModel iCardModel;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<AddressModel> addressModel;
-
-    // @ManyToMany
-    // @JoinTable(
-    //     name = "user_roles",
-    //     joinColumns = @JoinColumn(name = "user_id"),
-    //     inverseJoinColumns = @JoinColumn(name = "role_id")
-    // )
-    // private List<RoleModel> roles = new ArrayList<>();
 
     UserModel(){}
 
@@ -109,22 +100,4 @@ public class UserModel {
     public IdCardModel getiCardModel() {
         return iCardModel;
     }
-
-    // public void addRole(RoleModel role) {
-    //     this.roles.add(role);
-    //     role.getUser().add(this);
-    // }
-
-    // public void removeRole(RoleModel role) {
-    //     this.roles.remove(role);
-    //     role.getUser().remove(this);
-    // }
-
-    // public void setRoleModel(List<RoleModel> roleModel) {
-    //     this.roles = roleModel;
-    // }
-
-    // public List<RoleModel> getRoleModel() {
-    //     return roles;
-    // }
 }
