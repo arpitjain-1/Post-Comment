@@ -6,6 +6,8 @@ import association.database.newDatabase.Entity.IdCardModel;
 import association.database.newDatabase.Entity.UserModel;
 import association.database.newDatabase.Service.UserService;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +38,11 @@ public class UserController {
     @GetMapping("/{id}")
     public UserModel handleUserProfile(@PathVariable int id) {
         return userService.currentUser(id);
+    }
+
+    @GetMapping("/print-all")
+    public List<UserModel> printAllUsers() {
+        return userService.printAllUsers();
     }
 
     @DeleteMapping("delete/id")

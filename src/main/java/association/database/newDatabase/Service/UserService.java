@@ -66,6 +66,21 @@ public class UserService {
         }
     }
 
+    // Admin Method
+    public List<UserModel> listAllUser(){
+        return userRepository.getAllUser();
+    }
+
+    public List<UserModel> printAllUsers() {
+        List<UserModel> allUsers = listAllUser();
+        allUsers.forEach(user -> {
+            System.out.println(user);
+        });
+        return allUsers;
+    }
+
+
+
     public UserModel updateUser(int id, UserModel userData) {
         UserModel existingUser  = userRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User  not found with id: " + id));
@@ -82,7 +97,7 @@ public class UserService {
     }
 
     public UserModel currentUser(int id) {
-        UserModel user = userRepository.findById(id)
+        UserModel user = userRepository.getUserByID(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         return user;
     }
