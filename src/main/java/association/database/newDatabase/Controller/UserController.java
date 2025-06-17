@@ -2,6 +2,8 @@ package association.database.newDatabase.Controller;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import association.database.newDatabase.DTO.Request.UserCreateDTO;
+import association.database.newDatabase.DTO.Response.UserResponseDTO;
 import association.database.newDatabase.Entity.IdCardModel;
 import association.database.newDatabase.Entity.UserModel;
 import association.database.newDatabase.Service.UserService;
@@ -9,6 +11,7 @@ import association.database.newDatabase.Service.UserService;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,7 +29,7 @@ public class UserController {
     UserService userService;
 
     @PostMapping("/create-new")
-    public UserModel handleNewUserCreation(@RequestBody UserModel userdata) {
+    public String handleNewUserCreation(@RequestBody UserCreateDTO userdata) {
         return userService.createUser(userdata);
     }
 
@@ -36,8 +39,9 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public UserModel handleUserProfile(@PathVariable int id) {
-        return userService.currentUser(id);
+    public ResponseEntity<UserResponseDTO> handleUserProfile(@PathVariable int id) {
+        UserResponseDTO dto = userService.currentUser(id);
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/print-all")

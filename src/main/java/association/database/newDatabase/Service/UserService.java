@@ -3,6 +3,10 @@ package association.database.newDatabase.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import association.database.newDatabase.DTO.Request.AddressDTO;
+import association.database.newDatabase.DTO.Request.UserCreateDTO;
+import association.database.newDatabase.DTO.Response.AddressResponseDTO;
+import association.database.newDatabase.DTO.Response.UserResponseDTO;
 import association.database.newDatabase.Entity.AddressModel;
 import association.database.newDatabase.Entity.IdCardModel;
 import association.database.newDatabase.Entity.UserModel;
@@ -15,6 +19,8 @@ import association.database.newDatabase.Exception.ResourceNotFoundException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +37,7 @@ public class UserService {
     @Autowired
     AddressService addressService;
 
-    public UserModel createUser(UserModel userdata) {
+    public String createUser(UserCreateDTO userdata) {
         try {
             if(userRepository.existsByEmail(userdata.getEmail())){
                 throw new UserAlreadyExistsException("User already exists with email: " + userdata.getEmail());
@@ -44,18 +50,30 @@ public class UserService {
                 throw new DataValidationException("Password Doesn't matched", null);
             }
 
-            List<AddressModel> addresses = userdata.getAddressModel();
-            if (addresses != null) {
-                for (AddressModel address : addresses) {
-                    address.setUser(userdata);
-                }
-            }
+            UserModel User = new UserModel();
+            User.setName(userdata.getName());
+            User.setEmail(userdata.getEmail());
+            User.setPassword(userdata.getPassword());
 
-            UserModel savedUser = userRepository.save(userdata);
-            IdCardModel Idcard = idCardService.createIdCard(savedUser);
+            List<AddressModel> addressList = new ArrayList<>();
+            if (userdata.getAddressModel() != null) {
+                for (AddressDTO dto : userdata.getAddressModel()) {
+                    AddressModel address = new AddressModel();
+                    address.setCity(dto.getCity());
+                    address.setStreet(dto.getStreet());
+                    address.setCountry(dto.getCountry());
+                    address.setUser(User);
+                    addressList.add(address);
+                }
+            }            
             
-            savedUser.setICardModel(Idcard);
-            return userRepository.save(savedUser);
+            User.setAddressModel(addressList);
+
+            IdCardModel Idcard = idCardService.createIdCard(userRepository.save(User));
+            User.setICardModel(Idcard);
+            
+            userRepository.save(User);
+            return "User Created";
 
         } catch (UserAlreadyExistsException e) {
             logger.error("Error: {}", e.getMessage());
@@ -96,10 +114,24 @@ public class UserService {
         return userRepository.save(existingUser);
     }
 
-    public UserModel currentUser(int id) {
+    public UserResponseDTO currentUser(int id) {
         UserModel user = userRepository.getUserByID(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        return user;
+        UserResponseDTO UserDTO = new UserResponseDTO();
+        UserDTO.setId(user.getId());
+        UserDTO.setEmail(user.getEmail());
+        UserDTO.setName(user.getName());
+
+        List <AddressResponseDTO> addresses = user.getAddressModel().stream()
+            .map(address -> {
+                AddressResponseDTO a = new AddressResponseDTO();
+                a.setCity(address.getCity());
+                a.setCountry(address.getCountry());
+                return a;
+            }).collect(Collectors.toList());
+        
+        UserDTO.setAddressModel(addresses);
+        return UserDTO;
     }
 
     public String deleteAccount(int id) {

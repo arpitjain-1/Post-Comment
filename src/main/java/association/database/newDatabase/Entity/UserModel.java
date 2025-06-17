@@ -45,7 +45,7 @@ public class UserModel {
     @JsonManagedReference
     private List<AddressModel> addressModel;
 
-    UserModel(){}
+    public UserModel(){}
 
     public UserModel(String Email, String Name, String Password){
         this.email = Email;
