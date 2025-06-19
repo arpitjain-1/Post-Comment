@@ -102,7 +102,7 @@ public class UserService {
         if(!userData.getPassword().matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")){
             throw new DataValidationException("Password Doesn't matched", null);
         }
-        if (userData.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}$")) {
+        if (!userData.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
             throw new DataValidationException("Email isn't satisfied", null);
         }
         existingUser.setEmail(userData.getEmail());
