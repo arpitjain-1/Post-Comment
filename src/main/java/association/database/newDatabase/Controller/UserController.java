@@ -4,7 +4,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import association.database.newDatabase.DTO.Request.UserCreateDTO;
 import association.database.newDatabase.DTO.Response.UserResponseDTO;
-import association.database.newDatabase.Entity.IdCardModel;
 import association.database.newDatabase.Entity.UserModel;
 import association.database.newDatabase.Service.UserService;
 

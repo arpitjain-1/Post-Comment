@@ -2,12 +2,6 @@ package association.database.newDatabase.DTO.Response;
 
 import java.util.List;
 
-import association.database.newDatabase.DTO.Request.AddressDTO;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.OneToMany;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-
 public class UserResponseDTO {
 
     private String Name;

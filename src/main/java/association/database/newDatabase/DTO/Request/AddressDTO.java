@@ -1,13 +1,8 @@
 package association.database.newDatabase.DTO.Request;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import association.database.newDatabase.Entity.UserModel;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+
 
 public class AddressDTO {
     private int street;

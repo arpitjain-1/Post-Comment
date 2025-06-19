@@ -12,14 +12,11 @@ import association.database.newDatabase.Entity.IdCardModel;
 import association.database.newDatabase.Entity.UserModel;
 import association.database.newDatabase.Exception.DataValidationException;
 import association.database.newDatabase.Exception.UserAlreadyExistsException;
-import association.database.newDatabase.Repository.IdCardRepository;
 import association.database.newDatabase.Repository.UserRepository;
 import association.database.newDatabase.Exception.ResourceNotFoundException;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -135,7 +132,7 @@ public class UserService {
     }
 
     public String deleteAccount(int id) {
-        UserModel user = userRepository.findById(id)
+        userRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         userRepository.deleteById(id);
         return "User with ID " + id + " deleted successfully.";
