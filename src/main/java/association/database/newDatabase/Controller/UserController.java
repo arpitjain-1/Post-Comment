@@ -26,13 +26,13 @@ public class UserController {
     
     @Autowired
     UserService userService;
-
     @PostMapping("/create-new")
-    public String handleNewUserCreation(@RequestBody UserCreateDTO userdata) {
-        return userService.createUser(userdata);
+    public ResponseEntity<String> handleNewUserCreation(@RequestBody UserCreateDTO userdata) {
+        return ResponseEntity.ok(userService.createUser(userdata));
     }
 
-    @PutMapping("update/{id}")
+
+    @PutMapping("/update/{id}")
     public UserModel handleUserUpdate(@PathVariable int id, @RequestBody UserModel userData) {
         return userService.updateUser(id, userData);
     }

@@ -108,7 +108,7 @@ public class UserService {
         existingUser.setEmail(userData.getEmail());
         existingUser.setName(userData.getName());
         existingUser.setPassword(userData.getPassword());
-        return userRepository.save(existingUser);
+        return userRepository.save(existingUser); // Change this to update
     }
 
     public UserResponseDTO currentUser(int id) {
