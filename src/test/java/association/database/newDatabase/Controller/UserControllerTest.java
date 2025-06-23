@@ -104,24 +104,25 @@ public class UserControllerTest {
 
     @Test
     void shouldUpdateUserById() throws Exception{
-        userModel.setEmail("arpit@gmail.com");
-        userModel.setPassword("spring@2025");
-        userModel.setName("Arpit");
-        userModel.setId(1);
-        
-        AddressModel address1 = new AddressModel();
-        address1.setStreet(1);
+        UserCreateDTO userDto = new UserCreateDTO();
+        userDto.setName("Arpit");
+        userDto.setEmail("arpitjain@gmail.com");
+
+        UserResponseDTO UserResponse = new UserResponseDTO();
+        UserResponse.setName(userDto.getName());
+        UserResponse.setEmail(userDto.getEmail());
+
+        AddressResponseDTO address1 = new AddressResponseDTO();
         address1.setCity("Delhi");
         address1.setCountry("India");
 
-        AddressModel address2 = new AddressModel();
-        address2.setStreet(2);
+        AddressResponseDTO address2 = new AddressResponseDTO();
         address2.setCity("Indore");
         address2.setCountry("India");
 
-        userModel.setAddressModel(List.of(address1, address2));
+        UserResponse.setAddressModel(List.of(address1, address2));
 
-        when(userService.updateUser(1, userModel)).thenReturn(userModel);
+        when(userService.updateUser(1, userDto)).thenReturn(UserResponse);
 
         mockMvc.perform(put("/update/1")
                 .contentType(MediaType.APPLICATION_JSON)

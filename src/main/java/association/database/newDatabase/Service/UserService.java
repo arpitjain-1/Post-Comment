@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-    
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -36,14 +37,14 @@ public class UserService {
 
     public String createUser(UserCreateDTO userdata) {
         try {
-            if(userRepository.existsByEmail(userdata.getEmail())){
+            if (userRepository.existsByEmail(userdata.getEmail())) {
                 throw new UserAlreadyExistsException("User already exists with email: " + userdata.getEmail());
             }
             if (!userdata.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
                 throw new DataValidationException("Email isn't satisfied", null);
             }
             String pass = userdata.getPassword();
-            if(!pass.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")){
+            if (!pass.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")) {
                 throw new DataValidationException("Password Doesn't matched", null);
             }
 
@@ -62,27 +63,27 @@ public class UserService {
                     address.setUser(User);
                     addressList.add(address);
                 }
-            }            
-            
+            }
+
             User.setAddressModel(addressList);
 
             IdCardModel Idcard = idCardService.createIdCard(userRepository.save(User));
             User.setICardModel(Idcard);
-            
+
             userRepository.save(User);
             return "User Created";
 
         } catch (UserAlreadyExistsException e) {
             logger.error("Error: {}", e.getMessage());
             throw e;
-        } catch(DataValidationException e){
+        } catch (DataValidationException e) {
             logger.error("Error: {}", e.getMessage());
             throw e;
         }
     }
 
     // Admin Method
-    public List<UserModel> listAllUser(){
+    public List<UserModel> listAllUser() {
         return userRepository.getAllUser();
     }
 
@@ -94,48 +95,105 @@ public class UserService {
         return allUsers;
     }
 
+    public UserResponseDTO updateUser(int id, UserCreateDTO userData) {
+    UserModel existingUser = userRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-
-    public UserModel updateUser(int id, UserModel userData) {
-        UserModel existingUser  = userRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("User  not found with id: " + id));
-        if(!userData.getPassword().matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")){
-            throw new DataValidationException("Password Doesn't matched", null);
-        }
-        if (!userData.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
-            throw new DataValidationException("Email isn't satisfied", null);
-        }
-        existingUser.setEmail(userData.getEmail());
-        existingUser.setName(userData.getName());
-        existingUser.setPassword(userData.getPassword());
-        return userRepository.save(existingUser); // Change this to update
+    // Validate input
+    if (!userData.getPassword().matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")) {
+        throw new DataValidationException("Password doesn't meet complexity requirements", null);
     }
+
+    if (!userData.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+        throw new DataValidationException("Invalid email format", null);
+    }
+
+    // Update basic fields
+    existingUser.setEmail(userData.getEmail());
+    existingUser.setName(userData.getName());
+    existingUser.setPassword(userData.getPassword());
+
+    // Handle address updates
+    if (userData.getAddressModel() != null) {
+        // Create map of existing addresses by ID
+        Map<Integer, AddressModel> existingAddressMap = existingUser.getAddressModel().stream()
+            .collect(Collectors.toMap(AddressModel::getAddressId, addr -> addr));
+
+        // Process each address in the update request
+        for (AddressDTO addressDTO : userData.getAddressModel()) {
+            if (addressDTO.getAddressId() != null) {
+                // Update existing address
+                AddressModel existingAddress = existingAddressMap.get(addressDTO.getAddressId());
+                if (existingAddress != null) {
+                    if (addressDTO.getCity() != null) existingAddress.setCity(addressDTO.getCity());
+                    if (addressDTO.getCountry() != null) existingAddress.setCountry(addressDTO.getCountry());
+                    if (addressDTO.getStreet() != 0) existingAddress.setStreet(addressDTO.getStreet());
+                }
+            } else {
+                // Add new address
+                AddressModel newAddress = new AddressModel();
+                newAddress.setCity(addressDTO.getCity());
+                newAddress.setCountry(addressDTO.getCountry());
+                newAddress.setStreet(addressDTO.getStreet());
+                newAddress.setUser(existingUser);
+                existingUser.getAddressModel().add(newAddress);
+            }
+        }
+        
+        // Addresses not mentioned in the update remain unchanged
+    }
+
+    UserModel savedUser = userRepository.save(existingUser);
+    return convertToResponseDTO(savedUser);
+}
+
+private UserResponseDTO convertToResponseDTO(UserModel user) {
+    UserResponseDTO response = new UserResponseDTO();
+    response.setId(user.getId());
+    response.setName(user.getName());
+    response.setEmail(user.getEmail());
+
+    if (user.getAddressModel() != null) {
+        List<AddressResponseDTO> addressDTOs = user.getAddressModel().stream()
+            .map(address -> {
+                AddressResponseDTO dto = new AddressResponseDTO();
+                dto.setAddressId(address.getAddressId());
+                dto.setCity(address.getCity());
+                dto.setCountry(address.getCountry());
+                return dto;
+            })
+            .collect(Collectors.toList());
+        response.setAddressModel(addressDTOs);
+    }
+    return response;
+}
 
     public UserResponseDTO currentUser(int id) {
         UserModel user = userRepository.getUserByID(id)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         UserResponseDTO UserDTO = new UserResponseDTO();
         UserDTO.setId(user.getId());
         UserDTO.setEmail(user.getEmail());
         UserDTO.setName(user.getName());
 
-        List <AddressResponseDTO> addresses = user.getAddressModel().stream()
-            .map(address -> {
-                AddressResponseDTO a = new AddressResponseDTO();
-                a.setCity(address.getCity());
-                a.setCountry(address.getCountry());
-                return a;
-            }).collect(Collectors.toList());
-        
+        List<AddressResponseDTO> addresses = user.getAddressModel().stream()
+                .map(address -> {
+                    AddressResponseDTO a = new AddressResponseDTO();
+                    a.setAddressId(address.getAddressId());
+                    a.setCity(address.getCity());
+                    a.setCountry(address.getCountry());
+                    return a;
+                }).collect(Collectors.toList());
+
         UserDTO.setAddressModel(addresses);
         return UserDTO;
     }
 
     public String deleteAccount(int id) {
         userRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         userRepository.deleteById(id);
         return "User with ID " + id + " deleted successfully.";
     }
-    
+
 }

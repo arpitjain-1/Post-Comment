@@ -16,7 +16,7 @@ import jakarta.validation.constraints.NotNull;
 public class AddressModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int addressId;
+    private Integer addressId;
 
     @NotNull(message = "Street can't be Null")
     private int street;
@@ -67,5 +67,12 @@ public class AddressModel {
 
     public void setUser(UserModel user) {
         this.user = user;
+    }
+    public Integer getAddressId() {
+        return addressId;
     }    
+
+    public void setAddressId(Integer addressId) {
+        this.addressId = addressId;
+    }
 }

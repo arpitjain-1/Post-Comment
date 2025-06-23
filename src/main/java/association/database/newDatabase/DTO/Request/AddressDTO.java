@@ -5,6 +5,7 @@ import association.database.newDatabase.Entity.UserModel;
 
 
 public class AddressDTO {
+    private Integer addressId;
     private int street;
     private String city;
     private String country;
@@ -13,8 +14,9 @@ public class AddressDTO {
     private UserModel user;
 
     public AddressDTO(){}
-    public AddressDTO(int street, String city, String country){
+    public AddressDTO(int street, String city, String country, int addressId){
         this.street = street;
+        this.addressId = addressId;
         this.city = city;
         this.country = country;
     }
@@ -37,6 +39,14 @@ public class AddressDTO {
 
     public String getCity() {
         return city;
+    }
+
+    public Integer getAddressId() {
+        return addressId;
+    }
+
+    public void setAddressId(Integer addressId) {
+        this.addressId = addressId;
     }
 
     public void setCity(String city) {
