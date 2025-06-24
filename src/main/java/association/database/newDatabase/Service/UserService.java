@@ -96,77 +96,67 @@ public class UserService {
     }
 
     public UserResponseDTO updateUser(int id, UserCreateDTO userData) {
-    UserModel existingUser = userRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        UserModel existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-    // Validate input
-    if (!userData.getPassword().matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")) {
-        throw new DataValidationException("Password doesn't meet complexity requirements", null);
-    }
+        if (!userData.getPassword().matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")) {
+            throw new DataValidationException("Password doesn't meet complexity requirements", null);
+        }
 
-    if (!userData.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
-        throw new DataValidationException("Invalid email format", null);
-    }
+        if (!userData.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            throw new DataValidationException("Invalid email format", null);
+        }
 
-    // Update basic fields
-    existingUser.setEmail(userData.getEmail());
-    existingUser.setName(userData.getName());
-    existingUser.setPassword(userData.getPassword());
+        existingUser.setEmail(userData.getEmail());
+        existingUser.setName(userData.getName());
+        existingUser.setPassword(userData.getPassword());
 
-    // Handle address updates
-    if (userData.getAddressModel() != null) {
-        // Create map of existing addresses by ID
-        Map<Integer, AddressModel> existingAddressMap = existingUser.getAddressModel().stream()
-            .collect(Collectors.toMap(AddressModel::getAddressId, addr -> addr));
+        if (userData.getAddressModel() != null) {
+            Map<Integer, AddressModel> existingAddressMap = existingUser.getAddressModel().stream()
+                    .collect(Collectors.toMap(AddressModel::getAddressId, addr -> addr));
 
-        // Process each address in the update request
-        for (AddressDTO addressDTO : userData.getAddressModel()) {
-            if (addressDTO.getAddressId() != null) {
-                // Update existing address
-                AddressModel existingAddress = existingAddressMap.get(addressDTO.getAddressId());
-                if (existingAddress != null) {
-                    if (addressDTO.getCity() != null) existingAddress.setCity(addressDTO.getCity());
-                    if (addressDTO.getCountry() != null) existingAddress.setCountry(addressDTO.getCountry());
-                    if (addressDTO.getStreet() != 0) existingAddress.setStreet(addressDTO.getStreet());
+            for (AddressDTO addressDTO : userData.getAddressModel()) {
+                if (addressDTO.getAddressId() != null) {
+                    AddressModel existingAddress = existingAddressMap.get(addressDTO.getAddressId());
+                    if (existingAddress != null) {
+                        if (addressDTO.getCity() != null)
+                            existingAddress.setCity(addressDTO.getCity());
+                        if (addressDTO.getCountry() != null)
+                            existingAddress.setCountry(addressDTO.getCountry());
+                        if (addressDTO.getStreet() != 0)
+                            existingAddress.setStreet(addressDTO.getStreet());
+                    }
+                } else {
+                    AddressModel newAddress = new AddressModel();
+                    newAddress.setCity(addressDTO.getCity());
+                    newAddress.setCountry(addressDTO.getCountry());
+                    newAddress.setStreet(addressDTO.getStreet());
+                    newAddress.setUser(existingUser);
+                    existingUser.getAddressModel().add(newAddress);
                 }
-            } else {
-                // Add new address
-                AddressModel newAddress = new AddressModel();
-                newAddress.setCity(addressDTO.getCity());
-                newAddress.setCountry(addressDTO.getCountry());
-                newAddress.setStreet(addressDTO.getStreet());
-                newAddress.setUser(existingUser);
-                existingUser.getAddressModel().add(newAddress);
             }
         }
-        
-        // Addresses not mentioned in the update remain unchanged
+        UserModel savedUser = userRepository.save(existingUser);
+
+        UserResponseDTO response = new UserResponseDTO();
+        response.setId(savedUser.getId());
+        response.setName(savedUser.getName());
+        response.setEmail(savedUser.getEmail());
+
+        if (savedUser.getAddressModel() != null) {
+            List<AddressResponseDTO> addressDTOs = savedUser.getAddressModel().stream()
+                    .map(address -> {
+                        AddressResponseDTO dto = new AddressResponseDTO();
+                        dto.setAddressId(address.getAddressId());
+                        dto.setCity(address.getCity());
+                        dto.setCountry(address.getCountry());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+            response.setAddressModel(addressDTOs);
+        }
+        return response;
     }
-
-    UserModel savedUser = userRepository.save(existingUser);
-    return convertToResponseDTO(savedUser);
-}
-
-private UserResponseDTO convertToResponseDTO(UserModel user) {
-    UserResponseDTO response = new UserResponseDTO();
-    response.setId(user.getId());
-    response.setName(user.getName());
-    response.setEmail(user.getEmail());
-
-    if (user.getAddressModel() != null) {
-        List<AddressResponseDTO> addressDTOs = user.getAddressModel().stream()
-            .map(address -> {
-                AddressResponseDTO dto = new AddressResponseDTO();
-                dto.setAddressId(address.getAddressId());
-                dto.setCity(address.getCity());
-                dto.setCountry(address.getCountry());
-                return dto;
-            })
-            .collect(Collectors.toList());
-        response.setAddressModel(addressDTOs);
-    }
-    return response;
-}
 
     public UserResponseDTO currentUser(int id) {
         UserModel user = userRepository.getUserByID(id)

@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import association.database.newDatabase.DTO.Response.UserResponseDTO;
 import association.database.newDatabase.Entity.UserModel;
 
 @Repository
