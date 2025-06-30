@@ -25,9 +25,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 
 @SpringBootApplication
-public class NewDatabaseApplication {
+public class newDatabaseApplication {
     public static void main(String[] args) {
-        SpringApplication.run(NewDatabaseApplication.class, args);
+        SpringApplication.run(newDatabaseApplication.class, args);
     }
 
 //     @Bean
