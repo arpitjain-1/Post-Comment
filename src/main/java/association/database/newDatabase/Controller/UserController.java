@@ -49,7 +49,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                    .body("This endpoint is not available in test profile");
         }
-        return ResponseEntity.ok(userService.printAllUsers());
+        return ResponseEntity.ok(userService.listAllUser());
     }
 
     @DeleteMapping("/delete/{id}")
