@@ -1,6 +1,11 @@
 package association.database.newDatabase.Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.stereotype.Service;
 
 import association.database.newDatabase.DTO.Request.AddressDTO;
@@ -17,99 +22,114 @@ import association.database.newDatabase.Exception.ResourceNotFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
+@CacheConfig(cacheNames = "users") 
 public class UserService {
-
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     @Autowired
-    UserRepository userRepository;
+    private UserRepository userRepository;
+    
     @Autowired
-    IdCardService idCardService;
-    @Autowired
-    AddressService addressService;
+    private IdCardService idCardService;
+    
 
-    public String createUser(UserCreateDTO userdata) {
+    @Caching(
+        evict = {
+            @CacheEvict(value = "allUsers", allEntries = true),
+            @CacheEvict(value = "userAddresses", allEntries = true)
+        }
+    )
+    public String createUser(UserCreateDTO userData) {
         try {
-            if (userRepository.existsByEmail(userdata.getEmail())) {
-                throw new UserAlreadyExistsException("User already exists with email: " + userdata.getEmail());
-            }
-            if (!userdata.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
-                throw new DataValidationException("Email isn't satisfied", null);
-            }
-            String pass = userdata.getPassword();
-            if (!pass.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")) {
-                throw new DataValidationException("Password Doesn't matched", null);
+            if (userRepository.existsByEmail(userData.getEmail())) {
+                throw new UserAlreadyExistsException("User already exists with email: " + userData.getEmail());
             }
 
-            UserModel User = new UserModel();
-            User.setName(userdata.getName());
-            User.setEmail(userdata.getEmail());
-            User.setPassword(userdata.getPassword());
+            if (!userData.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+                throw new DataValidationException("Invalid email format", null);
+            }
+
+            if (!userData.getPassword().matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")) {
+                throw new DataValidationException("Password doesn't meet complexity requirements", null);
+            }
+
+            UserModel user = new UserModel();
+            user.setName(userData.getName());
+            user.setEmail(userData.getEmail());
+            user.setPassword(userData.getPassword());
 
             List<AddressModel> addressList = new ArrayList<>();
-            if (userdata.getAddressModel() != null) {
-                for (AddressDTO dto : userdata.getAddressModel()) {
+            if (userData.getAddressModel() != null) {
+                for (AddressDTO dto : userData.getAddressModel()) {
                     AddressModel address = new AddressModel();
                     address.setCity(dto.getCity());
                     address.setStreet(dto.getStreet());
                     address.setCountry(dto.getCountry());
-                    address.setUser(User);
+                    address.setUser(user);
                     addressList.add(address);
                 }
             }
+            user.setAddressModel(addressList);
 
-            User.setAddressModel(addressList);
+            UserModel savedUser = userRepository.save(user);
+            IdCardModel idCard = idCardService.createIdCard(savedUser);
+            savedUser.setICardModel(idCard);
+            userRepository.save(savedUser);
 
-            IdCardModel Idcard = idCardService.createIdCard(userRepository.save(User));
-            User.setICardModel(Idcard);
+            return "User Created Successfully";
 
-            userRepository.save(User);
-            return "User Created";
-
-        } catch (UserAlreadyExistsException e) {
-            logger.error("Error: {}", e.getMessage());
-            throw e;
-        } catch (DataValidationException e) {
-            logger.error("Error: {}", e.getMessage());
+        } catch (UserAlreadyExistsException | DataValidationException e) {
+            logger.error("Error creating user: {}", e.getMessage());
             throw e;
         }
     }
 
-    // Admin Method
+    @Cacheable(value = "allUsers", sync = true)
     public List<UserModel> listAllUser() {
+        logger.info("Fetching all users from database");
         return userRepository.getAllUser();
     }
 
-    public List<UserModel> printAllUsers() {
-        List<UserModel> allUsers = listAllUser();
-        allUsers.forEach(user -> {
-            System.out.println(user);
-        });
-        return allUsers;
+    @Cacheable(key = "#id", unless = "#result == null")
+    public UserResponseDTO currentUser(int id) {
+        logger.info("Fetching user {} from database", id);
+        UserModel user = userRepository.getUserByID(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        return mapToUserResponseDTO(user);
     }
 
+    @Caching(
+        put = { @CachePut(key = "#id") },
+        evict = {
+            @CacheEvict(value = "allUsers", allEntries = true),
+            @CacheEvict(value = "userAddresses", key = "#id")
+        }
+    )    
     public UserResponseDTO updateUser(int id, UserCreateDTO userData) {
         UserModel existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        if (!userData.getPassword().matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")) {
+        if (userData.getPassword() != null && 
+            !userData.getPassword().matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$")) {
             throw new DataValidationException("Password doesn't meet complexity requirements", null);
         }
 
-        if (!userData.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+        if (userData.getEmail() != null && 
+            !userData.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
             throw new DataValidationException("Invalid email format", null);
         }
 
-        existingUser.setEmail(userData.getEmail());
-        existingUser.setName(userData.getName());
-        existingUser.setPassword(userData.getPassword());
+        if (userData.getName() != null) existingUser.setName(userData.getName());
+        if (userData.getEmail() != null) existingUser.setEmail(userData.getEmail());
+        if (userData.getPassword() != null) existingUser.setPassword(userData.getPassword());
 
         if (userData.getAddressModel() != null) {
             Map<Integer, AddressModel> existingAddressMap = existingUser.getAddressModel().stream()
@@ -119,12 +139,9 @@ public class UserService {
                 if (addressDTO.getAddressId() != null) {
                     AddressModel existingAddress = existingAddressMap.get(addressDTO.getAddressId());
                     if (existingAddress != null) {
-                        if (addressDTO.getCity() != null)
-                            existingAddress.setCity(addressDTO.getCity());
-                        if (addressDTO.getCountry() != null)
-                            existingAddress.setCountry(addressDTO.getCountry());
-                        if (addressDTO.getStreet() != 0)
-                            existingAddress.setStreet(addressDTO.getStreet());
+                        if (addressDTO.getCity() != null) existingAddress.setCity(addressDTO.getCity());
+                        if (addressDTO.getCountry() != null) existingAddress.setCountry(addressDTO.getCountry());
+                        if (addressDTO.getStreet() != 0) existingAddress.setStreet(addressDTO.getStreet());
                     }
                 } else {
                     AddressModel newAddress = new AddressModel();
@@ -136,54 +153,51 @@ public class UserService {
                 }
             }
         }
+
         UserModel savedUser = userRepository.save(existingUser);
+        return mapToUserResponseDTO(savedUser);
+    }
 
-        UserResponseDTO response = new UserResponseDTO();
-        response.setId(savedUser.getId());
-        response.setName(savedUser.getName());
-        response.setEmail(savedUser.getEmail());
-
-        if (savedUser.getAddressModel() != null) {
-            List<AddressResponseDTO> addressDTOs = savedUser.getAddressModel().stream()
-                    .map(address -> {
-                        AddressResponseDTO dto = new AddressResponseDTO();
-                        dto.setAddressId(address.getAddressId());
-                        dto.setCity(address.getCity());
-                        dto.setCountry(address.getCountry());
-                        return dto;
-                    })
-                    .collect(Collectors.toList());
-            response.setAddressModel(addressDTOs);
+    @Caching(
+        evict = {
+            @CacheEvict(key = "#id"),
+            @CacheEvict(value = "allUsers", allEntries = true),
+            @CacheEvict(value = "userAddresses", key = "#id"),
+            @CacheEvict(value = "idCards", key = "#id")
         }
-        return response;
-    }
-
-    public UserResponseDTO currentUser(int id) {
-        UserModel user = userRepository.getUserByID(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        UserResponseDTO UserDTO = new UserResponseDTO();
-        UserDTO.setId(user.getId());
-        UserDTO.setEmail(user.getEmail());
-        UserDTO.setName(user.getName());
-
-        List<AddressResponseDTO> addresses = user.getAddressModel().stream()
-                .map(address -> {
-                    AddressResponseDTO a = new AddressResponseDTO();
-                    a.setAddressId(address.getAddressId());
-                    a.setCity(address.getCity());
-                    a.setCountry(address.getCountry());
-                    return a;
-                }).collect(Collectors.toList());
-
-        UserDTO.setAddressModel(addresses);
-        return UserDTO;
-    }
-
+    )
     public String deleteAccount(int id) {
-        userRepository.findById(id)
+        UserModel user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        userRepository.deleteById(id);
+        
+        userRepository.delete(user);
         return "User with ID " + id + " deleted successfully.";
     }
 
+    @CacheEvict(allEntries = true)
+    public void evictAllUserCache() {
+        logger.info("Evicting all user caches");
+    }
+    
+    private UserResponseDTO mapToUserResponseDTO(UserModel user) {
+        UserResponseDTO dto = new UserResponseDTO();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+
+        if (user.getAddressModel() != null) {
+            List<AddressResponseDTO> addresses = user.getAddressModel().stream()
+                    .map(address -> {
+                        AddressResponseDTO addrDto = new AddressResponseDTO();
+                        addrDto.setAddressId(address.getAddressId());
+                        addrDto.setCity(address.getCity());
+                        addrDto.setCountry(address.getCountry());
+                        return addrDto;
+                    })
+                    .collect(Collectors.toList());
+            dto.setAddressModel(addresses);
+        }
+
+        return dto;
+    }
 }
