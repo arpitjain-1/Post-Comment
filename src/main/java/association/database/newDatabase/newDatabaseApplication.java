@@ -10,6 +10,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 // import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 // import org.springframework.context.annotation.Bean;
+import org.springframework.cache.annotation.EnableCaching;
 
 // import association.database.newDatabase.Entity.AddressModel;
 // import association.database.newDatabase.Entity.IdCardModel;
