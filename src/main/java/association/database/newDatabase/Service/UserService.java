@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.stereotype.Service;
 
@@ -39,13 +38,6 @@ public class UserService {
     @Autowired
     private IdCardService idCardService;
     
-
-    @Caching(
-        evict = {
-            @CacheEvict(value = "allUsers", allEntries = true),
-            @CacheEvict(value = "userAddresses", allEntries = true)
-        }
-    )
     public String createUser(UserCreateDTO userData) {
         try {
             if (userRepository.existsByEmail(userData.getEmail())) {
@@ -91,13 +83,13 @@ public class UserService {
         }
     }
 
-    @Cacheable(value = "allUsers", sync = true)
+    @Cacheable(value = "Users")
     public List<UserModel> listAllUser() {
         logger.info("Fetching all users from database");
         return userRepository.getAllUser();
     }
 
-    @Cacheable(key = "#id", unless = "#result == null")
+    @Cacheable(value = "User", key = "#id")
     public UserResponseDTO currentUser(int id) {
         logger.info("Fetching user {} from database", id);
         UserModel user = userRepository.getUserByID(id)
@@ -106,13 +98,7 @@ public class UserService {
         return mapToUserResponseDTO(user);
     }
 
-    @Caching(
-        put = { @CachePut(key = "#id") },
-        evict = {
-            @CacheEvict(value = "allUsers", allEntries = true),
-            @CacheEvict(value = "userAddresses", key = "#id")
-        }
-    )    
+    @CachePut(value = "User", key = "#id")
     public UserResponseDTO updateUser(int id, UserCreateDTO userData) {
         UserModel existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -158,25 +144,13 @@ public class UserService {
         return mapToUserResponseDTO(savedUser);
     }
 
-    @Caching(
-        evict = {
-            @CacheEvict(key = "#id"),
-            @CacheEvict(value = "allUsers", allEntries = true),
-            @CacheEvict(value = "userAddresses", key = "#id"),
-            @CacheEvict(value = "idCards", key = "#id")
-        }
-    )
+    @CacheEvict(value = "User", key = "#id")
     public String deleteAccount(int id) {
         UserModel user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         
         userRepository.delete(user);
         return "User with ID " + id + " deleted successfully.";
-    }
-
-    @CacheEvict(allEntries = true)
-    public void evictAllUserCache() {
-        logger.info("Evicting all user caches");
     }
     
     private UserResponseDTO mapToUserResponseDTO(UserModel user) {
