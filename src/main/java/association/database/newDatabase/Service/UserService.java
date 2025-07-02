@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.stereotype.Service;
 
@@ -20,9 +21,12 @@ import association.database.newDatabase.Repository.UserRepository;
 import association.database.newDatabase.Exception.ResourceNotFoundException;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Sort;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,4 +178,34 @@ public class UserService {
 
         return dto;
     }
+
+    @Scheduled(fixedDelay = 50000, initialDelay = 10000)
+    public void logUserCount(){
+        logger.info("Total User Count is:- {}", userRepository.count());
+    }
+
+    @Scheduled(cron = "0 */1 * * * *")
+    public void autoDeleteTopUser(){
+        List<UserModel>users = userRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+        Optional<Integer> shortestId = users.stream()
+            .map(UserModel::getId)
+            .min(Comparator.naturalOrder());
+        int size = users.size();
+        if (size >= 5) {
+            UserModel topUser = users.get(0);
+            userRepository.deleteById(shortestId.get());
+            logger.info("Deleted second last user: {}", topUser);
+        } else {
+            logger.info("Not enough users to delete the top user.");
+        }
+    }
+
+    @Scheduled(fixedRate = 60000)
+    public void logRecentUserData(){
+        userRepository.findTopByOrderByIdDesc().ifPresent(user -> {
+            logger.info("Fetching last user's data");
+            logger.info("Username: {}", user.getName());
+            logger.info("Useremail: {}", user.getEmail());
+        });
+    } 
 }

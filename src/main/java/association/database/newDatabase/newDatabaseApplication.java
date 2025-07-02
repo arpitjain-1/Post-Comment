@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 // import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 // import org.springframework.context.annotation.Bean;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 // import association.database.newDatabase.Entity.AddressModel;
 // import association.database.newDatabase.Entity.IdCardModel;
@@ -27,6 +28,7 @@ import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication
 @EnableCaching
+@EnableScheduling
 public class newDatabaseApplication {
     public static void main(String[] args) {
         SpringApplication.run(newDatabaseApplication.class, args);
