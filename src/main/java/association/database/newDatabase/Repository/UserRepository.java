@@ -23,5 +23,7 @@ public interface UserRepository extends JpaRepository <UserModel, Integer>{
 
     //Jpa with the Qery Perameter
     @Query("Select u from UserModel u where u.id =:id")
-    Optional<UserModel> getUserByID(@Param(value = "id") int id);    
+    Optional<UserModel> getUserByID(@Param(value = "id") int id);
+
+    Optional<UserModel> findTopByOrderByIdDesc();    
 }
